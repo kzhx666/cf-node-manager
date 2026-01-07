@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    # 如果你后续用 GitHub Actions 发布到 GHCR，可以改成：
+    # image: ghcr.io/<你的github用户名>/<仓库名>:latest
+    ports:
+      - "8080:8080"
+    environment:
+      WEB_PASSWORD: ${WEB_PASSWORD:-admin}
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
