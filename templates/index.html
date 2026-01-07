@@ -1,1 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CF 优选 Pro v42.29</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb; --primary-bg: rgba(37,99,235,0.1);
+            --bg: #f8fafc; --card-bg: #ffffff; --text: #1e293b; --text-sec: #64748b;
+            --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
+            --hover: #f1f5f9;
+        }
+        [data-theme="dark"] {
+            --primary: #60a5fa; --primary-bg: rgba(96,165,250,0.1);
+            --bg: #0f172a; --card-bg: #1e293b; --text: #f1f5f9; --text-sec: #94a3b8;
+            --border: #334155; --success: #34d399; --danger: #f87171;
+            --hover: #2a3546;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; line-height: 1.5; }
+        .container { max-width: 900px; margin: 0 auto; display: grid; gap: 20px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .brand { font-size: 1.4rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .brand span { color: var(--primary); }
+        .stats-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-card { background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; cursor: pointer; transition: 0.2s; }
+        .stat-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-lbl { font-size: 0.8rem; color: var(--text-sec); }
+        .card { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
+        .card-header { padding: 15px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-weight: 600; font-size: 1rem; }
+        .card-body { padding: 20px; }
+        .sub-list { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--bg); border-radius: 0 0 16px 16px; }
+        .sub-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; transition: 0.2s; overflow: hidden; }
+        .sub-item:hover { border-color: var(--primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .sub-header { display: flex; align-items: center; padding: 8px 12px; gap: 10px; cursor: pointer; }
+        .sub-handle { color: var(--text-sec); cursor: grab; padding: 4px; font-size: 1.2rem; }
+        .sub-name-input { flex: 1; border: none; background: transparent; font-weight: 600; font-size: 0.95rem; color: var(--text); padding: 4px; outline: none; transition: 0.2s; border-bottom: 1px solid transparent; }
+        .sub-name-input:focus { border-bottom-color: var(--primary); }
+        .actions { display: flex; gap: 4px; align-items: center; }
+        .btn-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-sec); cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .btn-icon:hover { background: var(--hover); color: var(--text); border-color: var(--border); }
+        .sub-body { padding: 12px; border-top: 1px solid var(--border); background: var(--hover); display: none; }
+        .sub-body.show { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        input, select, textarea { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 0.9rem; box-sizing: border-box; outline: none; }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        textarea { font-family: monospace; resize: vertical; }
+        .fab-bar { position: sticky; bottom: 20px; background: var(--card-bg); padding: 12px 20px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 99; margin-top: 20px; width: fit-content; margin-left: auto; margin-right: auto; gap: 20px; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 50px; font-weight: 600; cursor: pointer; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .toggle-switch { position: relative; width: 40px; height: 22px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(18px); }
+        .link-box { margin-bottom: 15px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+        .link-box.opt { border-left: 4px solid var(--success); }
+        .link-box.raw { border-left: 4px solid #f59e0b; }
+        .link-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
+        .link-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+        .link-label { width: 60px; font-size: 0.8rem; font-weight: 600; color: var(--text-sec); flex-shrink: 0; }
+        .link-input { font-family: monospace; font-size: 0.8rem; background: var(--card-bg); cursor: pointer; color: var(--text); flex: 1; }
+        #toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: white; padding: 8px 16px; border-radius: 50px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 2000; font-size: 0.85rem; }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .group-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .chip { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; background: var(--bg); }
+        .chip:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+        .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .chip-count { margin-left: 6px; font-size: 0.75rem; opacity: 0.8; background: rgba(0,0,0,0.1); padding: 1px 6px; border-radius: 10px; }
+        .filter-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+        .filter-input { flex: 1; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
 
+<div id="toast"></div>
+
+{% if not authorized %}
+<div style="height:100vh; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="width:100%; max-width:350px; text-align:center; padding:30px;">
+        <h2>🔐 登录</h2>
+        <form method="POST">
+            <input type="password" name="password" placeholder="Password" style="margin:20px 0;">
+            <button type="submit" class="btn-primary" style="width:100%">Go</button>
+        </form>
+    </div>
+</div>
+{% else %}
+
+<div class="container">
+    <div class="navbar">
+        <div class="brand">CF<span>优选Pro</span></div>
+        <button class="btn-ghost" onclick="toggleTheme()">🌗</button>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-card" onclick="showNodePreview()"><div class="stat-val">{{ node_count }}</div><div class="stat-lbl">可用节点</div></div>
+        <div class="stat-card"><div class="stat-val" id="timer">--:--</div><div class="stat-lbl">下次同步</div></div>
+    </div>
+
+    <form method="POST" action="/save" id="mainForm">
+        <div class="card">
+            <div class="card-header"><span class="card-title">📡 优选 IP 库</span></div>
+            <div class="card-body">
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="api_url" name="cf_api_url" value="{{ data.cf_api_url }}" placeholder="API链接 / 生成器域名">
+                    <button type="button" class="btn-primary" onclick="updateIPs()">⚡ 拉取</button>
+                </div>
+                <textarea name="ips" id="ips_area" rows="3" placeholder="IP 列表...">{{ data.ips }}</textarea>
+                <div style="margin-top:10px; display:flex; gap:10px; font-size:0.9rem;">
+                    <span>负载:</span>
+                    <select name="max_ips_per_node" style="width:auto; padding:4px;">
+                        <option value="5" {% if data.max_ips_per_node==5 %}selected{% endif %}>5个</option>
+                        <option value="10" {% if data.max_ips_per_node==10 %}selected{% endif %}>10个</option>
+                        <option value="0" {% if data.max_ips_per_node==0 %}selected{% endif %}>全部</option>
+                        <option value="3" {% if data.max_ips_per_node==3 %}selected{% endif %}>3个</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-bottom:none; border-radius:16px 16px 0 0;">
+            <div class="card-header">
+                <span class="card-title">🔗 订阅列表</span>
+                <button type="button" class="btn-ghost" onclick="addSub()">+ 添加</button>
+            </div>
+        </div>
+        
+        <div id="sub-list" class="sub-list">
+            {% for sub in data.remote_subs %}
+            <div class="sub-item">
+                <div class="sub-header" onclick="toggleBody(this)">
+                    <div class="sub-handle" onclick="event.stopPropagation()">☰</div>
+                    <input name="sub_tags[]" class="sub-name-input" value="{{ sub.tag }}" placeholder="未命名节点" onclick="event.stopPropagation()">
+                    <div class="actions" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-icon top" onclick="moveTop(this)">⬆️</button>
+                        <button type="button" class="btn-icon" onclick="moveBottom(this)">⬇️</button>
+                        <button type="button" class="btn-icon" onclick="toggleBody(this.closest('.sub-header'))">✏️</button>
+                        <button type="button" class="btn-icon del" onclick="removeSub(this)">×</button>
+                    </div>
+                </div>
+                <div class="sub-body">
+                    <textarea name="sub_urls[]" rows="3" placeholder="支持多行：HTTP订阅链接、VLESS/TUIC/Hy2单节点链接、Base64文本...">{{ sub.url }}</textarea>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" onchange="this.parentElement.nextElementSibling.value=this.checked?'1':'0'" {% if sub.enabled %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <input type="hidden" name="sub_enables[]" value="{{ '1' if sub.enabled else '0' }}">
+                            <span style="font-size:0.9rem;">启用优选</span>
+                        </div>
+                        {% if sub.info %}
+                        <div style="font-size:0.8rem; color:var(--text-sec)">{{ sub.info.used }} / {{ sub.info.total }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card" style="margin-top:20px">
+            <div class="card-header"><span class="card-title">⚙️ 参数设置</span></div>
+            <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div><label>同步间隔 (秒)</label><input type="number" name="cfg_interval" value="{{ data.config.interval }}"></div>
+                <div><label>并发线程</label><input type="number" name="cfg_threads" value="{{ data.config.threads }}"></div>
+                <div style="grid-column: span 2;"><label>自定义分组关键词 (支持中英文逗号, 优先匹配)</label><input name="cfg_custom_groups" value="{{ data.config.custom_groups }}" placeholder="例如: snip, work, 游戏机"></div>
+            </div>
+            <div style="display:none">
+                <input name="cfg_timeout" value="{{ data.config.timeout }}">
+                <input name="cfg_ua" value="{{ data.config.ua }}">
+                <input name="cfg_sub_token" value="{{ data.config.sub_token }}">
+                <textarea name="clash_tpl">{{ data.clash_tpl }}</textarea>
+            </div>
+        </div>
+
+        <div class="fab-bar">
+            <span style="color:var(--text-sec); font-size:0.9rem;">调整后请保存</span>
+            <button type="submit" class="btn-primary">💾 保存配置</button>
+        </div>
+    </form>
+
+    {% if sub_url %}
+    <div class="card">
+        <div class="card-header"><span class="card-title">📤 订阅分组与输出</span></div>
+        <div class="card-body">
+            <div style="margin-bottom:10px; font-size:0.85rem; color:var(--text-sec);">⚡ 快捷筛选 (点击切换，再次点击取消)</div>
+            <div id="group-chips" class="group-chips">加载中...</div>
+            
+            <div class="filter-row">
+                <input id="filterInput" class="filter-input" placeholder="包含关键词 (Filter)" onkeyup="updateLinks()">
+                <input id="excludeInput" class="filter-input" placeholder="排除关键词 (Exclude)" onkeyup="updateLinks()">
+            </div>
+
+            <div class="link-box opt">
+                <div class="link-title" style="color:var(--success)">⚡ 优选订阅 (Inline 预览)</div>
+                <div class="link-row"><span class="link-label">V2Ray</span><input id="link-v2" class="link-input" readonly onclick="copy(this)"><button class="btn-ghost btn-sm" onclick="qr(document.getElementById('link-v2').value)">码</button></div>
+                <div class="link-row"><span class="link-label">Clash</span><input id="link-clash" class="link-input" readonly onclick="copy(this)"><button class="btn-ghost btn-sm" onclick="qr(document.getElementById('link-clash').value)">码</button></div>
+                <div class="link-row"><span class="link-label">Sing-box</span><input id="link-sb" class="link-input" readonly onclick="copy(this)"><button class="btn-ghost btn-sm" onclick="qr(document.getElementById('link-sb').value)">码</button></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header"><span class="card-title">📜 日志</span><button class="btn-ghost" onclick="toggleLog()" id="logBtn">⏸️</button></div>
+        <div id="liveLog" style="padding:15px; font-family:monospace; font-size:0.8rem; height:150px; overflow-y:auto; background:var(--bg);">loading...</div>
+    </div>
+</div>
+
+<div id="qrModal" class="modal" onclick="this.style.display='none'"><div class="modal-content" style="text-align: center; width: auto;" onclick="event.stopPropagation()"><div id="qrcode"></div><p style="margin-top: 15px; color: var(--text-sec);">扫码订阅</p></div></div>
+<div id="nodeModal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div class="card-header"><div class="card-title">节点预览 (<span id="nodeCnt">0</span>)</div></div><input placeholder="搜索..." onkeyup="filterNodes()" id="nodeSearch" style="margin-bottom: 15px;"><div style="max-height:300px; overflow-y: auto;"><table style="width: 100%; font-size:0.85rem; border-collapse:collapse;"><tbody id="nodeTableBody"></tbody></table></div></div></div>
+
+<script>
+    new Sortable(document.getElementById('sub-list'), { handle: '.sub-handle', animation: 150 });
+    const BASE_URL = "{{ sub_url }}";
+    const CUSTOM_GROUPS = "{{ data.config.custom_groups }}".split(/[,，]/).map(s=>s.trim()).filter(s=>s);
+    let cachedNodes = [];
+
+    function initGroups() {
+        fetch('/api/nodes').then(r=>r.json()).then(nodes => {
+            cachedNodes = nodes;
+            const container = document.getElementById('group-chips');
+            container.innerHTML = `<div class="chip active" onclick="selectGroup(this, '', '')">🌍 全部 <span class="chip-count">${nodes.length}</span></div>`;
+            
+            CUSTOM_GROUPS.forEach(g => {
+                const count = nodes.filter(n => {
+                    const txt = (n.name + " " + (n._tag||"")).toLowerCase();
+                    return txt.includes(g.toLowerCase());
+                }).length;
+                let style = count === 0 ? 'opacity:0.5' : '';
+                container.innerHTML += `<div class="chip" style="${style}" onclick="selectGroup(this, '${g}', '')">🏷️ ${g} <span class="chip-count">${count}</span></div>`;
+            });
+
+            const countryCounts = {};
+            const othersCount = nodes.filter(n => {
+                if (CUSTOM_GROUPS.some(g => (n.name + " " + (n._tag||"")).toLowerCase().includes(g.toLowerCase()))) return false;
+                const match = n._clean_name.match(/^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/);
+                if (match) {
+                    let label = n._clean_name.split(' ')[0]; 
+                    countryCounts[label] = (countryCounts[label] || 0) + 1;
+                    return false;
+                }
+                return true; 
+            }).length;
+
+            Object.keys(countryCounts).forEach(c => {
+                container.innerHTML += `<div class="chip" onclick="selectGroup(this, '${c}', '${CUSTOM_GROUPS.join('|')}')">${c} <span class="chip-count">${countryCounts[c]}</span></div>`;
+            });
+
+            if (othersCount > 0) {
+                const allCountries = Object.keys(countryCounts).join('|').replace(/[^\w\u4e00-\u9fa5|]/g, '');
+                const exclude = CUSTOM_GROUPS.join('|') + (allCountries ? '|' + allCountries : '');
+                container.innerHTML += `<div class="chip" onclick="selectGroup(this, '', '${exclude}')">🏳️ 其他 <span class="chip-count">${othersCount}</span></div>`;
+            }
+        });
+        updateLinks();
+    }
+
+    function selectGroup(el, filter, exclude) {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('filterInput').value = filter;
+        document.getElementById('excludeInput').value = exclude;
+        updateLinks();
+    }
+
+    function updateLinks() {
+        const filter = document.getElementById('filterInput').value.trim();
+        const exclude = document.getElementById('excludeInput').value.trim();
+        let query = "";
+        if (filter) query += `&filter=${encodeURIComponent(filter)}`;
+        if (exclude) query += `&exclude=${encodeURIComponent(exclude)}`;
+        
+        document.getElementById('link-v2').value = BASE_URL + query;
+        document.getElementById('link-clash').value = BASE_URL + "&flag=clash" + query;
+        document.getElementById('link-sb').value = BASE_URL + "&flag=singbox" + query;
+    }
+
+    function showToast(msg) { const t=document.getElementById('toast'); t.innerText=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); }
+    function copy(el) { el.select(); navigator.clipboard.writeText(el.value).then(()=>showToast("已复制")); }
+    function qr(txt) { document.getElementById('qrcode').innerHTML=""; new QRCode(document.getElementById('qrcode'), {text:txt, width:200, height:200}); document.getElementById('qrModal').style.display='flex'; }
+    function toggleTheme() { const b = document.body; const t = b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; b.setAttribute('data-theme',t); localStorage.setItem('theme',t); }
+    if (localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+    function toggleBody(header) { const body = header.nextElementSibling; body.classList.toggle('show'); }
+    function moveTop(btn) { const item=btn.closest('.sub-item'); document.getElementById('sub-list').prepend(item); }
+    function moveBottom(btn) { const item=btn.closest('.sub-item'); document.getElementById('sub-list').append(item); }
+    function removeSub(btn) { if(confirm('删?')) btn.closest('.sub-item').remove(); }
+    function addSub() { const div = document.createElement('div'); div.className = 'sub-item'; div.innerHTML = `<div class="sub-header" onclick="toggleBody(this)"><div class="sub-handle" onclick="event.stopPropagation()">☰</div><input name="sub_tags[]" class="sub-name-input" placeholder="名称" onclick="event.stopPropagation()"><div class="actions" onclick="event.stopPropagation()"><button type="button" class="btn-icon top" onclick="moveTop(this)">⬆️</button><button type="button" class="btn-icon" onclick="moveBottom(this)">⬇️</button><button type="button" class="btn-icon" onclick="toggleBody(this.closest('.sub-header'))">✏️</button><button type="button" class="btn-icon del" onclick="removeSub(this)">×</button></div></div><div class="sub-body show"><textarea name="sub_urls[]" rows="3" placeholder="支持多行..."></textarea><div style="display:flex; justify-content:space-between; margin-top:10px;"><div style="display:flex; gap:8px;"><label class="toggle-switch"><input type="checkbox" onchange="this.parentElement.nextElementSibling.value=this.checked?'1':'0'" checked><span class="slider"></span></label><input type="hidden" name="sub_enables[]" value="1"><span style="font-size:0.9rem">启用优选</span></div></div></div>`; document.getElementById('sub-list').prepend(div); }
+    function updateIPs() { const u=document.getElementById('api_url').value; if(!u)return showToast("请输入内容"); showToast("拉取中..."); fetch('/api/fetch_ips',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u})}).then(r=>r.json()).then(d=>{if(d.status==='success'){document.getElementById('ips_area').value=d.ips;showToast("成功");}else showToast(d.msg)}); }
+    function showNodePreview() { document.getElementById('nodeModal').style.display='flex'; fetch('/api/nodes').then(r=>r.json()).then(n=>{ document.getElementById('nodeCnt').innerText=n.length; const b=document.getElementById('nodeTableBody'); b.innerHTML=''; n.forEach((x,i)=>{ b.innerHTML+=`<tr><td style="padding:8px">${x.name}<div style="font-size:12px;color:#888;margin-top:2px">${x.server?x.server:''}${x.port?(':'+x.port):''}${x.ports?(' | 跳跃:'+x.ports):''}</div></td><td style="color:#888">${x.type}</td><td style="text-align:right"><button class="btn-ghost" style="padding:2px 6px" onclick="delNode(${i})">×</button></td></tr>`; }); }); }
+    function delNode(i) { fetch('/api/node_delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:i})}).then(showNodePreview); }
+    function filterNodes() { const k=document.getElementById('nodeSearch').value.toLowerCase(); for(let r of document.getElementById('nodeTableBody').getElementsByTagName('tr')) r.style.display=r.innerText.toLowerCase().includes(k)?'':'none'; }
+    let logPaused = false;
+    function fetchLog() { if(logPaused) return; fetch('/api/logs').then(r=>r.text()).then(t => { const el = document.getElementById('liveLog'); if(t.length !== el.innerText.length) { el.innerText = t; el.scrollTop = el.scrollHeight; } }); }
+    setInterval(fetchLog, 3000);
+    function toggleLog() { logPaused=!logPaused; document.getElementById('logBtn').innerText=logPaused?'▶️':'⏸️'; }
+    var lastSync={{ data.last_sync or 0 }}; var syncInterval={{ data.config.interval }}; var isSyncing=false; var ttl=0;
+    setInterval(() => { fetch('/api/status').then(r=>r.json()).then(d => { ttl = d.ttl; isSyncing = d.is_syncing; const timerEl = document.getElementById('timer'); if (isSyncing) timerEl.innerText = "同步中..."; else if (ttl <= 0) timerEl.innerText = "等待触发"; else { const h = Math.floor(ttl / 3600); const m = Math.floor((ttl % 3600) / 60); timerEl.innerText = `${h}时 ${m}分`; } }); }, 1000);
+    if(new URLSearchParams(window.location.search).get('status') === 'saved') { showToast("✅ 已保存"); history.replaceState(null, '', location.pathname); }
+    
+    initGroups();
+</script>
+{% endif %}
+</body>
+</html>
