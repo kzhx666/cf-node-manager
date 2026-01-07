@@ -42,7 +42,7 @@ docker compose up -d --build
 ```
 
 浏览器访问：
-- `http://服务器IP:8080/`
+- `http://服务器IP:5000/`
 
 ---
 
