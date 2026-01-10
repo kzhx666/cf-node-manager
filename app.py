@@ -14,7 +14,7 @@ except: pass
 WEB_PASSWORD = os.environ.get("WEB_PASSWORD", "admin")
 LOGIN_PATH = "admin_login"
 DATA_DIR = "/app/data"
-APP_VERSION = "2026.01.07-hy2-mport-anytls-shadowtls-naive"
+APP_VERSION = "v42.40-hy2mport-anytls-shadowtls-naive"
 DATA_FILE = os.path.join(DATA_DIR, "data.json")
 BACKUP_FILE = os.path.join(DATA_DIR, "data.json.bak")
 CACHE_FILE = os.path.join(DATA_DIR, "domain_cache.json")
@@ -185,7 +185,7 @@ async def fetch_single_url(session, url, timeout):
 
 def decode_sub_content(content):
     content = content.strip()
-    if any(content.startswith(p) for p in ['vless://', 'vmess://', 'trojan://', 'ss://', 'hysteria2://', 'hy2://', 'tuic://', 'anytls://', 'shadowtls://', 'stls://', 'naive+https://', 'naive+quic://', 'naive://']):
+    if ('\n' not in content and '\r' not in content) and any(content.startswith(p) for p in ['vless://', 'vmess://', 'trojan://', 'ss://', 'hysteria2://', 'hy2://', 'tuic://', 'anytls://', 'shadowtls://', 'stls://', 'naive+https://', 'naive+quic://', 'naive://']):
         return parse_uri_list([content])
     try:
         if yaml and ("proxies:" in content or "Proxy:" in content):
@@ -299,9 +299,28 @@ def parse_uri(uri):
                             else:
                                 plugin_info['opts'][opt] = True
 
+                def _split_host_port(hp: str):
+                    hp = (hp or "").strip()
+                    # IPv6 bracket form: [::1]:443
+                    if hp.startswith('[') and ']' in hp:
+                        host = hp[1:hp.find(']')]
+                        rest = hp[hp.find(']')+1:]
+                        if rest.startswith(':'):
+                            return host, rest[1:]
+                        return host, ""
+                    # If it looks like IPv6 without brackets, assume last ':' splits port
+                    if hp.count(':') > 1:
+                        host, port = hp.rsplit(':', 1)
+                        return host, port
+                    # IPv4 / domain
+                    if ':' in hp:
+                        host, port = hp.split(':', 1)
+                        return host, port
+                    return hp, ""
+
                 if "@" in raw:
                     user_part, host_part = raw.rsplit("@", 1)
-                    host, port = host_part.split(":")
+                    host, port = _split_host_port(host_part)
                     try:
                         userinfo = safe_b64decode(user_part).decode()
                         method, password = userinfo.split(":", 1)
@@ -311,7 +330,7 @@ def parse_uri(uri):
                     decoded = safe_b64decode(raw).decode()
                     userinfo, hostport = decoded.rsplit("@", 1)
                     method, password = userinfo.split(":", 1)
-                    host, port = hostport.split(":")
+                    host, port = _split_host_port(hostport)
                 b.update({'type': 'ss', 'server': host, 'port': int(port), 'cipher': method, 'password': password})
                 if plugin_info:
                     # Normalize shadow-tls plugin naming
@@ -512,9 +531,11 @@ def gen_clash(n, ip=None, port=None, name=None):
 
         def get_alpn_list(obj):
             val = obj.get('alpn', 'h3')
-            if isinstance(val, list): return val
-            if val is None: return ['h3']
-            val = str(val)
+            if isinstance(val, (list, tuple)):
+                return [str(x).strip() for x in val if str(x).strip()]
+            val = str(val).strip()
+            if not val:
+                return ['h3']
             return [x.strip() for x in val.split(',')] if ',' in val else [val]
 
         if n['type'] == 'vless':
@@ -690,9 +711,11 @@ def gen_singbox(n, ip=None, port=None, name=None):
         
         def get_alpn_list(obj):
             val = obj.get('alpn', 'h3')
-            if isinstance(val, list): return val
-            if val is None: return ['h3']
-            val = str(val)
+            if isinstance(val, (list, tuple)):
+                return [str(x).strip() for x in val if str(x).strip()]
+            val = str(val).strip()
+            if not val:
+                return ['h3']
             return [x.strip() for x in val.split(',')] if ',' in val else [val]
 
         if n['type'] == 'vless':
@@ -719,6 +742,7 @@ def gen_singbox(n, ip=None, port=None, name=None):
             if n.get('ports'):
                 parts = parse_ports_spec(n.get('ports'))
                 if parts:
+                    parts = [pp.replace(':','-') for pp in parts]
                     # If caller overrides base port, rebuild spec with new base as first element
                     if port and str(port) != str(n.get('port')):
                         orig_base = str(n.get('port'))
